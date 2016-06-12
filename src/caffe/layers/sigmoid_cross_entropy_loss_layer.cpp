@@ -2,7 +2,7 @@
 
 #include "caffe/layers/sigmoid_cross_entropy_loss_layer.hpp"
 #include "caffe/util/math_functions.hpp"
-
+#include <iostream>
 namespace caffe {
 
 template <typename Dtype>
@@ -22,6 +22,9 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Reshape(
   LossLayer<Dtype>::Reshape(bottom, top);
   CHECK_EQ(bottom[0]->count(), bottom[1]->count()) <<
       "SIGMOID_CROSS_ENTROPY_LOSS layer inputs must have the same count.";
+  if (bottom.size() == 3) {
+    CHECK_EQ(bottom[0]->count(), bottom[2]->count()) << "SIGMOID_CROSS_ENTROPY_LOSS layer weight must be the same count";
+  }
   sigmoid_layer_->Reshape(sigmoid_bottom_vec_, sigmoid_top_vec_);
 }
 
@@ -38,11 +41,40 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
   const Dtype* input_data = bottom[0]->cpu_data();
   const Dtype* target = bottom[1]->cpu_data();
   Dtype loss = 0;
-  for (int i = 0; i < count; ++i) {
-    loss -= input_data[i] * (target[i] - (input_data[i] >= 0)) -
-        log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >= 0)));
+  if (bottom.size() == 2) {
+    for (int i = 0; i < count; ++i) {
+      loss -= input_data[i] * (target[i] - (input_data[i] >= 0)) -
+          log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >= 0)));
+    }
+    top[0]->mutable_cpu_data()[0] = loss / num;
+  } else if (bottom.size() == 3) {
+    const Dtype* weights = bottom[2]->cpu_data();
+    Dtype weight_sum = 0.0;
+    for (int i = 0; i < count; ++i) {
+      /*
+      Dtype tmp1 = (input_data[i] * (target[i] - (input_data >= 0));
+      Dtype tmp2 = log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >=0 )));
+      loss = loss + (tmp2 - tmp1) * weights[i];
+      */
+      
+      loss -= (weights[i] * (input_data[i] * (target[i] - (input_data[i] >= 0)) - log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >=0 )))));
+      weight_sum += weights[i];
+      
+    }
+    if (weight_sum > 0.0) {
+      top[0]->mutable_cpu_data()[0] = loss / weight_sum;
+    }
+    // std::cout << loss << " weights sum is " << weight_sum << std::endl;
   }
-  top[0]->mutable_cpu_data()[0] = loss / num;
+  
+  //for (int i=0; i<24*24;++i) {
+  //  std::cout << input_data[i] << " ";
+  //}
+  //std::cout<<std::endl;
+  //for (int i=0; i<24*24;++i) {
+  //  std::cout << target[i] << " ";
+  //}
+  
 }
 
 template <typename Dtype>
@@ -63,8 +95,25 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
     caffe_sub(count, sigmoid_output_data, target, bottom_diff);
     // Scale down gradient
     const Dtype loss_weight = top[0]->cpu_diff()[0];
-    caffe_scal(count, loss_weight / num, bottom_diff);
+    if (bottom.size() == 2) {
+      caffe_scal(count, loss_weight / num, bottom_diff);
+    } else if (bottom.size() == 3) {
+      const Dtype* weights = bottom[2]->cpu_data();
+      Dtype weight_sum = 0.0;
+      for (int i = 0; i < count; ++i) {
+        bottom_diff[i] *= weights[i];
+        weight_sum += weights[i];
+      }
+      if (weight_sum > 0.0) {
+        caffe_scal(count, loss_weight / weight_sum, bottom_diff);
+      }
+    }
   }
+  //std::cout << "cross entroypy loss" << std::endl;
+  //for (int i=0; i<24*24;++i) {
+  //  std::cout << bottom[0]->cpu_diff()[i] << " ";
+ // }
+  //std::cout << std::endl;
 }
 
 #ifdef CPU_ONLY

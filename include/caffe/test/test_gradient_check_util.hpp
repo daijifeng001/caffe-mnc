@@ -264,3 +264,4 @@ Dtype GradientChecker<Dtype>::GetObjAndGradient(const Layer<Dtype>& layer,
 }  // namespace caffe
 
 #endif  // CAFFE_TEST_GRADIENT_CHECK_UTIL_H_
+

@@ -76,3 +76,4 @@ typedef ::testing::Types<CPUDevice<float>, CPUDevice<double>,
 }  // namespace caffe
 
 #endif  // CAFFE_TEST_TEST_CAFFE_MAIN_HPP_
+

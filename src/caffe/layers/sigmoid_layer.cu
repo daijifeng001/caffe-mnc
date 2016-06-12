@@ -1,5 +1,6 @@
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 #include "caffe/layers/sigmoid_layer.hpp"
 
@@ -52,6 +53,12 @@ void SigmoidLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         count, top_diff, top_data, bottom_diff);
     CUDA_POST_KERNEL_CHECK;
   }
+  //std::cout << "Sigmoid" << std::endl;
+  //for (int i = 0;i<24*24;++i) {
+  //  std::cout << bottom[0]->cpu_diff()[i] << " ";
+  //}
+  //std::cout << std::endl;
+  //std::cout << "Sigmoid finish" << std::endl;
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(SigmoidLayer);

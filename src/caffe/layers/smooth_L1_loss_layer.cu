@@ -6,7 +6,7 @@
 // ------------------------------------------------------------------
 
 #include "caffe/fast_rcnn_layers.hpp"
-
+#include <iostream>
 namespace caffe {
 
 template <typename Dtype>
@@ -110,6 +110,28 @@ void SmoothL1LossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       }
     }
   }
+  Dtype* bottom_data = bottom[0]->mutable_cpu_data();
+  Dtype* bottom_data2 = bottom[1]->mutable_cpu_data();
+  Dtype* diff_print = diff_.mutable_cpu_data();
+  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+  // we print the gradient for RPN loss
+  /*
+  if (bottom[0]->shape()[0] == 1) {
+    LOG(INFO) << "SmoothL1Debug: " << bottom[0]->shape_string();
+    LOG(INFO) << "SmoothL1Debug: " << bottom[0]->shape()[3] << " " << bottom[0]->shape()[2] << " " << bottom[0]->shape()[1];
+    LOG(INFO) << top[0]->cpu_diff()[0] << " " << bottom[0]->num();
+    
+    for (int w = 0; w < bottom[0]->shape()[3]; w++) {
+      for (int h = 0; h < bottom[0]->shape()[2]; h++) {
+        for (int c = 0; c < bottom[0]->shape()[1]; c++) {
+          Dtype data = bottom_diff[c*bottom[0]->shape()[2]*bottom[0]->shape()[3] + h * bottom[0]->shape()[3] + w];
+          if (data < 1e-12 && data > -1 * 1e-12) continue;
+          std::cout << "(" << c << "," << h << "," << w << "): " << data << std::endl;
+        }
+      }
+    }
+  }
+  */
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(SmoothL1LossLayer);
