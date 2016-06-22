@@ -1,9 +1,9 @@
-// ------------------------------------------------------------------
-// Fast R-CNN
-// Copyright (c) 2015 Microsoft
-// Licensed under The MIT License [see fast-rcnn/LICENSE for details]
-// Written by Ross Girshick
-// ------------------------------------------------------------------
+// --------------------------------------------------------
+// Multitask Network Cascade
+// Written by Haozhi Qi
+// Copyright (c) 2016, Haozhi Qi
+// Licensed under The MIT License [see LICENSE for details]
+// --------------------------------------------------------
 
 #include <cfloat>
 

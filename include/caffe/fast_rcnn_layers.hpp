@@ -1,9 +1,9 @@
-// ------------------------------------------------------------------
-// Fast R-CNN
-// Copyright (c) 2015 Microsoft
-// Licensed under The MIT License [see fast-rcnn/LICENSE for details]
-// Written by Ross Girshick
-// ------------------------------------------------------------------
+// --------------------------------------------------------
+// Multitask Network Cascade
+// Modified from caffe-fast-rcnn (https://github.com/rbgirshick/caffe-fast-rcnn)
+// Copyright (c) 2016, Haozhi Qi
+// Licensed under The MIT License [see LICENSE for details]
+// --------------------------------------------------------
 
 #ifndef CAFFE_FAST_RCNN_LAYERS_HPP_
 #define CAFFE_FAST_RCNN_LAYERS_HPP_

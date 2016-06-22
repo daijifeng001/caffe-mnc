@@ -1,9 +1,9 @@
-// ------------------------------------------------------------------
+// --------------------------------------------------------
 // Multitask Network Cascade
-// Copyright (c) 2016 Microsoft
-// Licensed under The MIT License
 // Written by Haozhi Qi
-// ------------------------------------------------------------------
+// Copyright (c) 2016, Haozhi Qi
+// Licensed under The MIT License [see LICENSE for details]
+// --------------------------------------------------------
 
 #include "caffe/layers/mask_resize_layer.hpp"
 

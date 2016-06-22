@@ -1,10 +1,9 @@
-// ------------------------------------------------------------------
+// --------------------------------------------------------
 // Multitask Network Cascade
-// Copyright (c) 2016 Microsoft
-// Licensed under The MIT License [see fast-rcnn/LICENSE for details]
-// Written by Haozhi Qi and Jifeng Dai
-// ------------------------------------------------------------------
-
+// Written by Haozhi Qi
+// Copyright (c) 2016, Haozhi Qi
+// Licensed under The MIT License [see LICENSE for details]
+// --------------------------------------------------------
 #include <cfloat>
 #include "caffe/fast_rcnn_layers.hpp"
 #include <thrust/reduce.h>

@@ -1,3 +1,11 @@
+// --------------------------------------------------------
+// Multitask Network Cascade
+// Written by Haozhi Qi
+// Copyright (c) 2016, Haozhi Qi
+// Licensed under The MIT License [see LICENSE for details]
+// --------------------------------------------------------
+
+
 #ifndef CAFFE_MASK_RESIZE_LAYERS_HPP_
 #define CAFFE_MASK_RESIZE_LAYERS_HPP_
 

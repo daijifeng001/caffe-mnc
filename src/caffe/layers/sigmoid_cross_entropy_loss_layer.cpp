@@ -51,12 +51,6 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
     const Dtype* weights = bottom[2]->cpu_data();
     Dtype weight_sum = 0.0;
     for (int i = 0; i < count; ++i) {
-      /*
-      Dtype tmp1 = (input_data[i] * (target[i] - (input_data >= 0));
-      Dtype tmp2 = log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >=0 )));
-      loss = loss + (tmp2 - tmp1) * weights[i];
-      */
-      
       loss -= (weights[i] * (input_data[i] * (target[i] - (input_data[i] >= 0)) - log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >=0 )))));
       weight_sum += weights[i];
       
@@ -64,16 +58,7 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
     if (weight_sum > 0.0) {
       top[0]->mutable_cpu_data()[0] = loss / weight_sum;
     }
-    // std::cout << loss << " weights sum is " << weight_sum << std::endl;
   }
-  
-  //for (int i=0; i<24*24;++i) {
-  //  std::cout << input_data[i] << " ";
-  //}
-  //std::cout<<std::endl;
-  //for (int i=0; i<24*24;++i) {
-  //  std::cout << target[i] << " ";
-  //}
   
 }
 
@@ -109,11 +94,6 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
       }
     }
   }
-  //std::cout << "cross entroypy loss" << std::endl;
-  //for (int i=0; i<24*24;++i) {
-  //  std::cout << bottom[0]->cpu_diff()[i] << " ";
- // }
-  //std::cout << std::endl;
 }
 
 #ifdef CPU_ONLY
