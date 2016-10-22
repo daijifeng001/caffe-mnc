@@ -65,9 +65,9 @@ __device__ void bilinear_interpolate(const Dtype* bottom_data, const int height,
   
 template <typename Dtype>
 __global__ void ROIWarpingForward(const int nthreads, const Dtype* bottom_data,
-			       const Dtype spatial_scale, const int channels, const int height, const int width,
-			       const int pooled_height, const int pooled_width, const Dtype* bottom_rois,
-			       Dtype* top_data, Dtype* argmax_data_h, Dtype* argmax_data_w) {
+             const Dtype spatial_scale, const int channels, const int height, const int width,
+             const int pooled_height, const int pooled_width, const Dtype* bottom_rois,
+             Dtype* top_data, Dtype* argmax_data_h, Dtype* argmax_data_w) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -95,24 +95,10 @@ __global__ void ROIWarpingForward(const int nthreads, const Dtype* bottom_data,
     Dtype maxidx_w = -1;
     bottom_data += (roi_level * channels + c) * height * width;
     
-    // in the forward part, since typically ROI size is larger than pooled output
-    // so we still do take the max value over a set of bilinear interpolated values
-    int roi_pool_ratio_h = ceil(roi_height / pooled_height);
-    int roi_pool_ratio_w = ceil(roi_width / pooled_width);
-    Dtype step_size_h = 1.0 / static_cast<Dtype>(roi_pool_ratio_h);
-    Dtype step_size_w = 1.0 / static_cast<Dtype>(roi_pool_ratio_w);
+    Dtype ih = roi_start_h + static_cast<Dtype>(ph) * bin_size_h;
+    Dtype iw = roi_start_w + static_cast<Dtype>(pw) * bin_size_w;
+    bilinear_interpolate(bottom_data, height, width, ih, iw, maxval, maxidx_h, maxidx_w);
 
-    for (Dtype fph = static_cast<Dtype>(ph); fph <= ph + 1; fph += step_size_h)
-    {
-      for (Dtype fpw = static_cast<Dtype>(pw); fpw <= pw + 1; fpw += step_size_w)
-      {
-        // inverse index in the feature map
-        Dtype ih = roi_start_h + static_cast<Dtype>(fph) * bin_size_h;
-        Dtype iw = roi_start_w + static_cast<Dtype>(fpw) * bin_size_w;
-        bilinear_interpolate(bottom_data, height, width, ih, iw, maxval, maxidx_h, maxidx_w);
-      }
-    }
-    
     if (maxidx_h == -1 && maxidx_w == -1) maxval = 0;
     top_data[index] = maxval;
     argmax_data_h[index] = maxidx_h;
@@ -122,7 +108,7 @@ __global__ void ROIWarpingForward(const int nthreads, const Dtype* bottom_data,
 
 template <typename Dtype>
 void ROIWarpingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-					   const vector<Blob<Dtype>*>& top) {
+             const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   const Dtype* bottom_rois = bottom[1]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
@@ -188,9 +174,9 @@ __device__ Dtype get_feature_gradient(Dtype argmax_h, Dtype argmax_w, const int 
   
 template <typename Dtype>
 __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_diff,
-				const Dtype* argmax_data_h, const Dtype* argmax_data_w, const int num_rois, const Dtype spatial_scale, const int channels,
-				const int height, const int width, const int pooled_height,
-				const int pooled_width, Dtype* bottom_diff, const Dtype* bottom_rois) {
+        const Dtype* argmax_data_h, const Dtype* argmax_data_w, const int num_rois, const Dtype spatial_scale, const int channels,
+        const int height, const int width, const int pooled_height,
+        const int pooled_width, Dtype* bottom_diff, const Dtype* bottom_rois) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // (n, c, h, w) coords in bottom data
     int w = index % width;
@@ -205,7 +191,7 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       int roi_level = offset_bottom_rois[0];
       // Skip if ROI's level doesn't match n
       if (n != roi_level) {
-	continue;
+  continue;
       }
       
       Dtype roi_start_w = round(offset_bottom_rois[1] * spatial_scale);
@@ -215,9 +201,9 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       
       // Skip if ROI doesn't include (h, w)
       const bool in_roi = (w >= floor(roi_start_w) && w <= ceil(roi_end_w) &&
-			   h >= floor(roi_start_h) && h <= ceil(roi_end_h));
+         h >= floor(roi_start_h) && h <= ceil(roi_end_h));
       if (!in_roi) {
-	continue;
+  continue;
       }
 
       int offset = (roi_n * channels + c) * pooled_height * pooled_width;
@@ -232,9 +218,9 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       Dtype roi_width = max(roi_end_w - roi_start_w+(Dtype)1.0, (Dtype)1.0);
       Dtype roi_height = max(roi_end_h - roi_start_h+(Dtype)1.0, (Dtype)1.0);
       Dtype bin_size_h = static_cast<Dtype>(roi_height)
-	/ static_cast<Dtype>(pooled_height);
+  / static_cast<Dtype>(pooled_height);
       Dtype bin_size_w = static_cast<Dtype>(roi_width)
-	/ static_cast<Dtype>(pooled_width);
+  / static_cast<Dtype>(pooled_width);
       
       int phstart = floor(static_cast<Dtype>(h - roi_start_h - 1) / bin_size_h - 1);
       int phend = ceil(static_cast<Dtype>(h - roi_start_h + 1) / bin_size_h);
@@ -247,11 +233,11 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       pwend = min(max(pwend, 0), pooled_width);
       
       for (int ph = phstart; ph < phend; ++ph) {
-	for (int pw = pwstart; pw < pwend; ++pw) {
-	  Dtype weight = get_feature_gradient(offset_argmax_data_h[ph * pooled_width + pw],
-					   offset_argmax_data_w[ph * pooled_width + pw], h, w, height, width);
-	  gradient += weight * offset_top_diff[ph * pooled_width + pw];
-	}
+  for (int pw = pwstart; pw < pwend; ++pw) {
+    Dtype weight = get_feature_gradient(offset_argmax_data_h[ph * pooled_width + pw],
+             offset_argmax_data_w[ph * pooled_width + pw], h, w, height, width);
+    gradient += weight * offset_top_diff[ph * pooled_width + pw];
+  }
       }
     }
     bottom_diff[index] = gradient;
@@ -260,8 +246,8 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
   
 template <typename Dtype>
 __device__ Dtype get_coordinate_gradient(int coordinate_index, Dtype h, Dtype w, 
-					 const Dtype* offset_bottom_data, const Dtype oh, const Dtype ow, const int height, const int width, 
-					 const int pooled_height, const int pooled_width) {
+           const Dtype* offset_bottom_data, const Dtype oh, const Dtype ow, const int height, const int width, 
+           const int pooled_height, const int pooled_width) {
   
   int arg_interpolate_h = (int) h;
   int arg_interpolate_w = (int) w;
@@ -279,30 +265,40 @@ __device__ Dtype get_coordinate_gradient(int coordinate_index, Dtype h, Dtype w,
   int corner_ind_3 = (arg_interpolate_h + 1) * width + arg_interpolate_w;
   int corner_ind_4 = (arg_interpolate_h + 1) * width + (arg_interpolate_w + 1);
   
+  Dtype dxc = 0.0, dyc = 0.0, dw = 0.0, dh = 0.0;
+  
+  dxc += (-1.0 * (1.0 - h + arg_interpolate_h) * offset_bottom_data[corner_ind_1]);
+  dxc += ( 1.0 * (1.0 - h + arg_interpolate_h) * offset_bottom_data[corner_ind_2]);
+  dxc += (-1.0 * (h - arg_interpolate_h)       * offset_bottom_data[corner_ind_3]);
+  dxc += ( 1.0 * (h - arg_interpolate_h)       * offset_bottom_data[corner_ind_4]);
+  
+  dyc += (-1.0 * (1.0 - w + arg_interpolate_w) * offset_bottom_data[corner_ind_1]);
+  dyc += (-1.0 * (w - arg_interpolate_w)       * offset_bottom_data[corner_ind_2]);
+  dyc += ( 1.0 * (1.0 - w + arg_interpolate_w) * offset_bottom_data[corner_ind_3]);
+  dyc += ( 1.0 * (w - arg_interpolate_w)       * offset_bottom_data[corner_ind_4]);
+  
+  dw += ((0.5 - map_ratio_w) * (1.0 - h + arg_interpolate_h) * offset_bottom_data[corner_ind_1]);
+  dw += ((-0.5+map_ratio_w)  * (1.0 - h + arg_interpolate_h) * offset_bottom_data[corner_ind_2]);
+  dw += ((0.5- map_ratio_w)  * (h - arg_interpolate_h)       * offset_bottom_data[corner_ind_3]);
+  dw += ( (-0.5+map_ratio_w) * (h - arg_interpolate_h)       * offset_bottom_data[corner_ind_4]);
+  
+  dh += ((0.5-map_ratio_h)   * (1.0 - w + arg_interpolate_w) * offset_bottom_data[corner_ind_1]);
+  dh += ((0.5- map_ratio_h)  * ( w - arg_interpolate_w)      * offset_bottom_data[corner_ind_2]);
+  dh += ( (-0.5+map_ratio_h) * (1.0 - w + arg_interpolate_w) * offset_bottom_data[corner_ind_3]);
+  dh += ( (-0.5+map_ratio_h) * ( w - arg_interpolate_w)      * offset_bottom_data[corner_ind_4]);
+      
   if (coordinate_index == 1) {
-    // \par f / \par xc
-      weight += (-1.0 * (1.0 - h + arg_interpolate_h)     * offset_bottom_data[corner_ind_1]);
-      weight += ( 1.0 * (1.0 - h + arg_interpolate_h)     * offset_bottom_data[corner_ind_2]);
-      weight += (-1.0 * (h - arg_interpolate_h) * offset_bottom_data[corner_ind_3]);
-      weight += ( 1.0 * (h - arg_interpolate_h) * offset_bottom_data[corner_ind_4]);
+    // \par f / \par x1
+    weight = dxc - 0.5 * dw;
   } else if (coordinate_index == 2) {
-    // \par f / \par yc
-      weight += (-1.0 * (1.0 - w + arg_interpolate_w)     * offset_bottom_data[corner_ind_1]);
-      weight += (-1.0 * (w - arg_interpolate_w) * offset_bottom_data[corner_ind_2]);
-      weight += ( 1.0 * (1.0 - w + arg_interpolate_w)     * offset_bottom_data[corner_ind_3]);
-      weight += ( 1.0 * (w - arg_interpolate_w) * offset_bottom_data[corner_ind_4]);
+    // \par f / \par y1
+    weight = dyc - 0.5 * dh;
   } else if (coordinate_index == 3) {
     // \par f / \par w
-      weight += ((0.5 - map_ratio_w) * (1.0 - h + arg_interpolate_h)     * offset_bottom_data[corner_ind_1]);
-      weight += ( (-0.5+map_ratio_w  )     * (1.0 - h + arg_interpolate_h)     * offset_bottom_data[corner_ind_2]);
-      weight += ((0.5- map_ratio_w) * (h - arg_interpolate_h) * offset_bottom_data[corner_ind_3]);
-      weight += ( (-0.5+map_ratio_w)       * (h - arg_interpolate_h) * offset_bottom_data[corner_ind_4]);
+    weight = dxc + 0.5 * dw;
   } else if (coordinate_index == 4) {
     // \par f / \par h
-      weight += ((0.5-map_ratio_h) * (1.0 - w + arg_interpolate_w)     * offset_bottom_data[corner_ind_1]);
-      weight += ((0.5- map_ratio_h) * ( w - arg_interpolate_w)     * offset_bottom_data[corner_ind_2]);
-      weight += ( (-0.5+map_ratio_h)       * (1.0 - w + arg_interpolate_w) * offset_bottom_data[corner_ind_3]);
-      weight += ( (-0.5+map_ratio_h  )     * ( w - arg_interpolate_w ) * offset_bottom_data[corner_ind_4]);
+    weight = dyc + 0.5 * dh;
   }
   return weight;
 }
@@ -382,7 +378,7 @@ struct linear_index_to_row_index : public thrust::unary_function<T,T>
 
 template <typename Dtype>
 void ROIWarpingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-					    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+              const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 
   const Dtype* bottom_data = bottom[0]->gpu_data();
   const Dtype* bottom_rois = bottom[1]->gpu_data();
@@ -442,4 +438,3 @@ void ROIWarpingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 INSTANTIATE_LAYER_GPU_FUNCS(ROIWarpingLayer);
   
 }  // namespace caffe
-
