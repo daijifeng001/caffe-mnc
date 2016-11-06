@@ -191,7 +191,7 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       int roi_level = offset_bottom_rois[0];
       // Skip if ROI's level doesn't match n
       if (n != roi_level) {
-  continue;
+        continue;
       }
       
       Dtype roi_start_w = round(offset_bottom_rois[1] * spatial_scale);
@@ -203,7 +203,7 @@ __global__ void ROIWarpingBackwardFeature(const int nthreads, const Dtype* top_d
       const bool in_roi = (w >= floor(roi_start_w) && w <= ceil(roi_end_w) &&
          h >= floor(roi_start_h) && h <= ceil(roi_end_h));
       if (!in_roi) {
-  continue;
+        continue;
       }
 
       int offset = (roi_n * channels + c) * pooled_height * pooled_width;
@@ -289,16 +289,16 @@ __device__ Dtype get_coordinate_gradient(int coordinate_index, Dtype h, Dtype w,
       
   if (coordinate_index == 1) {
     // \par f / \par x1
-    weight = dxc - 0.5 * dw;
+    weight = 0.5 * dxc - dw;
   } else if (coordinate_index == 2) {
     // \par f / \par y1
-    weight = dyc - 0.5 * dh;
+    weight = 0.5 * dyc - dh;
   } else if (coordinate_index == 3) {
     // \par f / \par w
-    weight = dxc + 0.5 * dw;
+    weight = 0.5 * dxc + dw;
   } else if (coordinate_index == 4) {
     // \par f / \par h
-    weight = dyc + 0.5 * dh;
+    weight = 0.5 * dyc + dh;
   }
   return weight;
 }
@@ -355,7 +355,7 @@ __global__ void ROIWarpingBackwardCoordinate(const int nthreads, const int poole
     // (similar for iw)
     const Dtype output_h = (ih - roi_start_h) / bin_size_h;
     const Dtype output_w = (iw - roi_start_w) / bin_size_w;
-    Dtype weight = get_coordinate_gradient(coordinate_index, ih, iw, offset_bottom_data, output_h, output_w, height, width, pooled_height, pooled_width);
+    Dtype weight = spatial_scale * get_coordinate_gradient(coordinate_index, ih, iw, offset_bottom_data, output_h, output_w, height, width, pooled_height, pooled_width);
     buffer_data[index] = weight * top_diff[offset];
   }
 }
