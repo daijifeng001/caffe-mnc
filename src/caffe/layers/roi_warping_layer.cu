@@ -294,10 +294,10 @@ __device__ Dtype get_coordinate_gradient(int coordinate_index, Dtype h, Dtype w,
     // \par f / \par y1
     weight = 0.5 * dyc - dh;
   } else if (coordinate_index == 3) {
-    // \par f / \par w
+    // \par f / \par x2
     weight = 0.5 * dxc + dw;
   } else if (coordinate_index == 4) {
-    // \par f / \par h
+    // \par f / \par y2
     weight = 0.5 * dyc + dh;
   }
   return weight;
